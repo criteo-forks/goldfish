@@ -1,0 +1,28 @@
+sudo: false
+language: go
+env:
+- PROJECT="goldfish"
+go:
+- 1.x
+go_import_path: github.com/caiyeon/goldfish
+install:
+  - . $HOME/.nvm/nvm.sh
+  - nvm install stable
+  - nvm use stable
+script:
+- (cd frontend && npm link webpack && rm -rf node_modules && npm cache clean --force && npm install)
+- sh build.sh 
+before_deploy:
+- go get github.com/mitchellh/gox
+- gox -os "linux" -arch "amd64 386 arm" -output "./bin/{{.OS}}_{{.Arch}}/${PROJECT}"
+- for i in ./bin/*; do cp "$i/${PROJECT}" . && tar -cvf "${PROJECT}-${TRAVIS_TAG//v/}_${i##*/}.tar.gz" $PROJECT LICENSE README.md ISSUE_TEMPLATE.md; rm "${PROJECT}"; done
+deploy:
+  provider: releases
+  file_glob: true
+  file: "*.tar.gz"
+  skip_cleanup: true
+  on:
+    tags: true
+  api_key:
+    secure: svu3Hp4M5JKUqpafSOROemLAAJcQOqb3j7N6ak4heK5OMIM/JxmmJpDxk2vxbgel5d/anQMzaoJ00skiqxxOulj+uGWhAnmZ7o/3yPf7Zq4TdAbEDmpbmY+62un/8r61L8oXs6QcbZ4iLu6Y7FA9dKKIn7GiXBFPF9k6rdjVNvnJKwsWqYe6ES1Hdof9y29WlDOr/73ZMbmSNtZlpNW9bHUxMFaR3xTxVEaQyGcVh78KeXw/4+0jXdG3XZPEL4ZsNjUzCKojt1w6uLZ/EUt6fvwwkSoTUEnejcrY4AXs1YwFpHydi1JWW+E06F7plvSQw/zJcneQXpmPSCnlBiZ48Uu0dzAEubIFJyuv8F02M+aHif+mGoJxWe8IctJa0ki4MimNqndORpyVloT292FOaldzNxiFAg6L1k93OWRjDuNfRoBbOSR9/SScyFOYhH4yR/GoDNPRVDwEZos+2n5Y8aHXSr4ILGXB7V7utJIKey1827OnsB6IGe064dXsMq5SAc6faFUEzLa2W2s8hzxxlT8ICVn9LYgtTZNRKZQbVSzCO/vsH+3KW2yYK6pUA4r9oWx/gu5C2nysmaVV5CATl8p2HzoQeocI+c+sBJU3UWs9ML6dZK06ZKo90/XmSQ6/g93gGLjXuaks1EahP/D3n5GR//6fqHkKsIrUTTNkqE8=
+
